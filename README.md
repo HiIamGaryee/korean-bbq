@@ -1,9 +1,8 @@
-# brewed-in-chaos
+# korean-bbq
 
-A coffee shop webpage which involved Web3 and AI by ---> Team COMPILE TIME CHAOS
-This project was created by React, Mui and cosmocloud (as backend). \
-🔗 : https://brewed-in-chaos.vercel.app \
-Demo: https://youtu.be/XKb1Bw1OVQw
+A Korean BBQ webpage which can see menu and Order Food.
+This project was created by React, Mui and python (as backend). \
+🔗 : https://sansan-korean-bbq.vercel.app
 
 ## Available Scripts
 

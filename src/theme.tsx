@@ -16,110 +16,176 @@ declare module "@mui/material/styles" {
   }
 }
 
-const yesevaFont = "Yeseva One, sans-serif";
-const montserratFont = "Montserrat, sans-serif";
+const headingFont = "Oswald, Bebas Neue, Noto Sans KR, sans-serif";
+const bodyFont = "Poppins, Inter, Noto Sans KR, sans-serif";
 
 // Function to create a theme based on the mode
 const getTheme = (mode: any) =>
   createTheme({
+    shape: {
+      borderRadius: 12,
+    },
     palette: {
       mode,
       primary: {
-        main: mode === "light" ? "#e2994f" : "#FFFFFF", // Brown for light mode, White for dark mode
-        light: "#A67C52",
-        dark: "#6D4C41",
-        contrastText: mode === "light" ? "#FFFFFF" : "#333333", // White text on primary color in light mode, dark text in dark mode
+        main: "#6B3CF6",
+        light: "#8C64F8",
+        dark: "#4B27C2",
+        contrastText: "#FFFFFF",
       },
       secondary: {
-        main: mode === "light" ? "#f7f3f0" : "#676767", // Light grey for light mode, grey for dark mode
-        light: "#FFD700",
-        dark: "#8c8a88",
-        contrastText: "#FFFFFF", // White text on secondary color
+        main: "#FF6A00",
+        light: "#FF8F40",
+        dark: "#CC5500",
+        contrastText: "#FFFFFF",
       },
       light: {
-        main: "#F5F3EF", // Main light background color (white background color)
+        main: "#F5F3EF",
         light: "#FFFFFF",
         dark: "#EDE7E0",
       },
       dark: {
-        main: "#18100e", // Main dark background color
-        light: "#514c4b",
-        dark: "light.main",
+        main: "#0E0E0E",
+        light: "#1A1A1A",
+        dark: "#0A0A0A",
       },
+      background: {
+        default: "#0E0E0E",
+        paper: "#1A1A1A",
+      },
+      text: {
+        primary: "#FFFFFF",
+        secondary: "#BDBDBD",
+      },
+      divider: "#2E2E2E",
       error: {
-        main: "#f44336", // Red for errors
+        main: "#f44336",
         light: "#e57373",
         dark: "#d32f2f",
       },
       warning: {
-        main: "#ff9800", // Orange for warnings
+        main: "#ff9800",
         light: "#ffb74d",
         dark: "#f57c00",
       },
       info: {
-        main: mode === "light" ? "#2196f3" : "#BBDEFB", // Light blue for information in light mode, softer in dark mode
+        main: mode === "light" ? "#2196f3" : "#BBDEFB",
         light: "#64b5f6",
         dark: "#1976d2",
       },
       success: {
-        main: "#4caf50", // Green for successes
+        main: "#4caf50",
         light: "#81c784",
         dark: "#388e3c",
       },
     },
     typography: {
-      fontFamily: montserratFont,
-      h1: { fontFamily: yesevaFont },
-      h2: { fontFamily: yesevaFont },
-      h3: { fontFamily: yesevaFont },
-      h4: { fontFamily: yesevaFont },
-      h5: { fontFamily: yesevaFont },
-      h6: { fontFamily: yesevaFont },
-      subtitle1: { fontFamily: yesevaFont },
-      button: { fontFamily: montserratFont },
+      fontFamily: bodyFont,
+      h1: {
+        fontFamily: headingFont,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.02em",
+      },
+      h2: {
+        fontFamily: headingFont,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.02em",
+      },
+      h3: {
+        fontFamily: headingFont,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.02em",
+      },
+      h4: {
+        fontFamily: headingFont,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.02em",
+      },
+      h5: {
+        fontFamily: headingFont,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.02em",
+      },
+      h6: {
+        fontFamily: headingFont,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.02em",
+      },
+      subtitle1: { fontFamily: headingFont },
+      button: {
+        fontFamily: bodyFont,
+        fontWeight: 600,
+        textTransform: "uppercase",
+        letterSpacing: "0.06em",
+      },
     },
     components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            backgroundColor: "#0E0E0E",
+            color: "#FFFFFF",
+          },
+          img: {
+            borderRadius: 12,
+          },
+        },
+      },
       MuiPaper: {
         defaultProps: {
           elevation: 2,
         },
         styleOverrides: {
           root: {
-            // padding: "20px",
-            backgroundColor: "#ffcdaa", // Light grey background
+            backgroundColor: "#1A1A1A",
             "&.table-paper": {
               boxShadow: "none",
               borderRadius: 0,
             },
           },
           rounded: {
-            borderRadius: "20px",
+            borderRadius: 12,
           },
           outlined: {
-            borderColor: "#bdbdbd", // Light grey border
+            borderColor: "#2E2E2E",
+          },
+        },
+      },
+      MuiDivider: {
+        styleOverrides: {
+          root: {
+            borderColor: "#2E2E2E",
+            backgroundColor: "#2E2E2E",
           },
         },
       },
       MuiToggleButtonGroup: {
         styleOverrides: {
           root: {
-            border: "1px solid #444",
+            border: "1px solid #2E2E2E",
             borderRadius: "4px",
-            background: "linear-gradient(45deg, #434343 0%, #000 100%)",
+            background: "linear-gradient(45deg, #1F1F1F 0%, #0E0E0E 100%)",
           },
         },
       },
       MuiToggleButton: {
         styleOverrides: {
           root: {
-            color: "#fff",
+            color: "#FFFFFF",
             border: "none",
             "&.Mui-selected": {
-              backgroundColor: "#555",
-              color: "#fff",
+              backgroundColor: "#6B3CF6",
+              color: "#FFFFFF",
+              boxShadow: "0 0 10px rgba(107,60,246,0.4)",
             },
             "&:hover": {
-              backgroundColor: "#444",
+              backgroundColor: "#2A2A2A",
             },
           },
         },
@@ -129,41 +195,27 @@ const getTheme = (mode: any) =>
           variant: "contained",
         },
         styleOverrides: {
-          contained: {
-            background: "#e2994f",
-            color: "#F5F3EF",
-            fontWeight: "bold",
-            borderRadius: "20px",
-            "&:hover": {
-              background: "#e2994f",
-            },
-            "&:focus": {
-              background: "#e2994f",
-            },
-          },
-          text: {
-            background: "#F5F3EF",
-            color: "#e2994f",
-            border: "1px solid error.main",
-            borderRadius: "4px",
-            "&:hover": {
-              background: "#F5F3EF",
-            },
-            "&:focus": {
-              background: "#F5F3EF",
-            },
-          },
           root: {
-            background: "#e2994f",
-            color: "#F5F3EF",
-            borderRadius: "28px",
-            p: "20px",
+            background: "#6B3CF6",
+            color: "#FFFFFF",
+            borderRadius: 50,
+            fontWeight: 600,
+            textTransform: "uppercase",
             "&:hover": {
-              background: "#c17d39",
+              background: "#5A2EE8",
+              boxShadow: "0 0 10px rgba(107,60,246,0.4)",
             },
             "&.Mui-disabled": {
               color: "#666",
               background: "#333333",
+            },
+            "&.MuiButton-containedSecondary": {
+              background: "#FF6A00",
+              color: "#FFFFFF",
+              "&:hover": {
+                background: "#E65F00",
+                boxShadow: "0 0 10px rgba(255,106,0,0.4)",
+              },
             },
           },
         },
@@ -171,17 +223,25 @@ const getTheme = (mode: any) =>
       MuiCard: {
         styleOverrides: {
           root: {
-            backgroundColor: "#f7f3f0",
+            backgroundColor: "#1A1A1A",
             padding: "24px",
-            borderRadius: "16px",
+            borderRadius: 12,
             height: "100%",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+          },
+        },
+      },
+      MuiCardMedia: {
+        styleOverrides: {
+          root: {
+            borderRadius: 12,
           },
         },
       },
       MuiTypography: {
         styleOverrides: {
           root: {
-            color: "#18100e",
+            color: "#FFFFFF",
           },
         },
       },
