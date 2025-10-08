@@ -22,8 +22,8 @@ import { useNavigate } from "react-router-dom";
 import MarkEmailReadRoundedIcon from "@mui/icons-material/MarkEmailReadRounded";
 const ContactUsListPage = () => {
   const { data: subscribleList } = useQuery({
-    queryKey: ["getContactUs", 50, 0],
-    queryFn: () => getContactUs(50, 0),
+    queryKey: ["getContactUs"],
+    queryFn: () => getContactUs(),
   });
   const navigate = useNavigate();
 

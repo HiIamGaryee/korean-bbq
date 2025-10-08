@@ -14,8 +14,8 @@ import {
 
 const AddListingPage = () => {
   const { data: BestSellerList } = useQuery({
-    queryKey: ["getBestSeller", 10, 0], // Includes parameters in the query key
-    queryFn: () => getBestSeller(10, 0), // Calls the function with parameters
+    queryKey: ["getBestSeller"], // Updated query key
+    queryFn: () => getBestSeller(), // Calls the function without parameters
   });
 
   const validationSchema = Yup.object({

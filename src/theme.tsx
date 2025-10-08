@@ -16,12 +16,22 @@ declare module "@mui/material/styles" {
   }
 }
 
-const headingFont = "Oswald, Bebas Neue, Noto Sans KR, sans-serif";
-const bodyFont = "Poppins, Inter, Noto Sans KR, sans-serif";
+// Google Fonts for headings (h1-h6) - Bold and impactful fonts
+const headingFont = "Anton, Bebas Neue, Exo 2, Josefin Sans, sans-serif";
+
+// Google Fonts for paragraphs (p) - Clean and readable fonts
+const bodyFont = "Open Sans, Roboto, BBH Sans Hegarty, sans-serif";
 
 // Function to create a theme based on the mode
-const getTheme = (mode: any) =>
-  createTheme({
+const getTheme = (mode: any) => {
+  const isLight = mode === "light";
+  const paletteBackgroundDefault = isLight ? "#F7F8FA" : "#0E0E0E";
+  const paletteBackgroundPaper = isLight ? "#FFFFFF" : "#1A1A1A";
+  const textPrimary = isLight ? "#0E0E0E" : "#FFFFFF";
+  const textSecondary = isLight ? "#4A4A4A" : "#BDBDBD";
+  const dividerColor = isLight ? "#E0E0E0" : "#2E2E2E";
+
+  return createTheme({
     shape: {
       borderRadius: 12,
     },
@@ -50,14 +60,14 @@ const getTheme = (mode: any) =>
         dark: "#0A0A0A",
       },
       background: {
-        default: "#0E0E0E",
-        paper: "#1A1A1A",
+        default: paletteBackgroundDefault,
+        paper: paletteBackgroundPaper,
       },
       text: {
-        primary: "#FFFFFF",
-        secondary: "#BDBDBD",
+        primary: textPrimary,
+        secondary: textSecondary,
       },
-      divider: "#2E2E2E",
+      divider: dividerColor,
       error: {
         main: "#f44336",
         light: "#e57373",
@@ -81,6 +91,7 @@ const getTheme = (mode: any) =>
     },
     typography: {
       fontFamily: bodyFont,
+      // Headings (h1-h6) - Bold and impactful fonts
       h1: {
         fontFamily: headingFont,
         fontWeight: 700,
@@ -117,20 +128,49 @@ const getTheme = (mode: any) =>
         textTransform: "uppercase",
         letterSpacing: "0.02em",
       },
-      subtitle1: { fontFamily: headingFont },
+      // Subtitles and paragraphs - Clean and readable fonts
+      subtitle1: {
+        fontFamily: bodyFont,
+        fontWeight: 500,
+      },
+      subtitle2: {
+        fontFamily: bodyFont,
+        fontWeight: 500,
+      },
+      body1: {
+        fontFamily: bodyFont,
+        fontWeight: 400,
+        lineHeight: 1.6,
+      },
+      body2: {
+        fontFamily: bodyFont,
+        fontWeight: 400,
+        lineHeight: 1.6,
+      },
+      // Buttons and other elements
       button: {
         fontFamily: bodyFont,
         fontWeight: 600,
         textTransform: "uppercase",
         letterSpacing: "0.06em",
       },
+      caption: {
+        fontFamily: bodyFont,
+        fontWeight: 400,
+      },
+      overline: {
+        fontFamily: bodyFont,
+        fontWeight: 400,
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+      },
     },
     components: {
       MuiCssBaseline: {
         styleOverrides: {
           body: {
-            backgroundColor: "#0E0E0E",
-            color: "#FFFFFF",
+            backgroundColor: paletteBackgroundDefault,
+            color: textPrimary,
           },
           img: {
             borderRadius: 12,
@@ -143,7 +183,7 @@ const getTheme = (mode: any) =>
         },
         styleOverrides: {
           root: {
-            backgroundColor: "#1A1A1A",
+            backgroundColor: paletteBackgroundPaper,
             "&.table-paper": {
               boxShadow: "none",
               borderRadius: 0,
@@ -153,31 +193,33 @@ const getTheme = (mode: any) =>
             borderRadius: 12,
           },
           outlined: {
-            borderColor: "#2E2E2E",
+            borderColor: dividerColor,
           },
         },
       },
       MuiDivider: {
         styleOverrides: {
           root: {
-            borderColor: "#2E2E2E",
-            backgroundColor: "#2E2E2E",
+            borderColor: dividerColor,
+            backgroundColor: dividerColor,
           },
         },
       },
       MuiToggleButtonGroup: {
         styleOverrides: {
           root: {
-            border: "1px solid #2E2E2E",
+            border: `1px solid ${dividerColor}`,
             borderRadius: "4px",
-            background: "linear-gradient(45deg, #1F1F1F 0%, #0E0E0E 100%)",
+            background: isLight
+              ? "linear-gradient(45deg, #FFFFFF 0%, #F7F8FA 100%)"
+              : "linear-gradient(45deg, #1F1F1F 0%, #0E0E0E 100%)",
           },
         },
       },
       MuiToggleButton: {
         styleOverrides: {
           root: {
-            color: "#FFFFFF",
+            color: textPrimary,
             border: "none",
             "&.Mui-selected": {
               backgroundColor: "#6B3CF6",
@@ -185,7 +227,7 @@ const getTheme = (mode: any) =>
               boxShadow: "0 0 10px rgba(107,60,246,0.4)",
             },
             "&:hover": {
-              backgroundColor: "#2A2A2A",
+              backgroundColor: isLight ? "#F1F1F1" : "#2A2A2A",
             },
           },
         },
@@ -207,7 +249,7 @@ const getTheme = (mode: any) =>
             },
             "&.Mui-disabled": {
               color: "#666",
-              background: "#333333",
+              background: isLight ? "#E0E0E0" : "#333333",
             },
             "&.MuiButton-containedSecondary": {
               background: "#FF6A00",
@@ -223,11 +265,13 @@ const getTheme = (mode: any) =>
       MuiCard: {
         styleOverrides: {
           root: {
-            backgroundColor: "#1A1A1A",
+            backgroundColor: paletteBackgroundPaper,
             padding: "24px",
             borderRadius: 12,
             height: "100%",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+            boxShadow: isLight
+              ? "0 2px 8px rgba(0,0,0,0.06)"
+              : "0 2px 8px rgba(0,0,0,0.3)",
           },
         },
       },
@@ -238,14 +282,8 @@ const getTheme = (mode: any) =>
           },
         },
       },
-      MuiTypography: {
-        styleOverrides: {
-          root: {
-            color: "#FFFFFF",
-          },
-        },
-      },
     },
   });
+};
 
 export default getTheme;

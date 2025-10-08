@@ -26,6 +26,10 @@ import ProductListPage from "./pages/admin/ProductListPage";
 import SubscribleListPage from "./pages/admin/SubscribleListPage";
 import ContactUsListPage from "./pages/admin/ContactUsListPage";
 import SalesList from "./pages/admin/SalesList";
+import RewardPage from "./pages/RewardPage";
+import MenuV2Page from "./pages/MenuV2Page";
+import TrackOrderPage from "./pages/TrackOrderPage";
+import NotificationsPage from "./pages/NotificationsPage";
 
 // Layout component that specifies the default error element
 const Layout = () => {
@@ -53,6 +57,10 @@ export const router = createBrowserRouter([
       { path: "/referral", element: <ReferralPage /> },
       { path: "/package", element: <PackagePage /> },
       { path: "/services", element: <ServicesPage /> },
+      { path: "/rewards", element: <RewardPage /> },
+      { path: "/menu-v2", element: <MenuV2Page /> },
+      { path: "/track-order", element: <TrackOrderPage /> },
+      { path: "/notifications", element: <NotificationsPage /> },
       { path: "/upcoming-movies", element: <UpcomingPage /> },
       { path: "/product", element: <ProductPage /> },
       { path: "product/:productCode", element: <ProductDetailPage /> },

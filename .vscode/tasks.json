@@ -5,7 +5,12 @@
       "type": "shell",
       "label": "👨🏻‍💻 Run Local Member",
       "command": "npm start"
-      // "command": "npm run build"
+    },
+    {
+      "type": "shell",
+      "label": "🔥 Run Backend Server",
+      "command": "cd backend && source venv/bin/activate && uvicorn main:app --reload",
+      "problemMatcher": []
     }
   ]
 }

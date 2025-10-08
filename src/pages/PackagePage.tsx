@@ -71,7 +71,7 @@ const PackagePage = () => {
           fontWeight="bold"
           sx={{ mb: 2 }}
         >
-          Join over 1 Million user using Brewed in chaos
+          Join over 1 Million user using SanSan Korean BBQ
         </Typography>
         <Typography variant="body1" align="center" sx={{ mb: 4 }}>
           <span>Cancel anytime</span> • <span>Secure payment</span>

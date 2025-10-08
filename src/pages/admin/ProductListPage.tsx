@@ -35,16 +35,17 @@ import { useNavigate } from "react-router-dom";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 const ProductListPage = () => {
   const validationSchema = Yup.object({
-    code: Yup.string().required("Email is required"),
-    name: Yup.string().required("name is required"),
-    image: Yup.string(),
-    price: Yup.string().required("price is required"),
-    acidity: Yup.string(),
-    roast: Yup.string(),
-    processing: Yup.string(),
-    description: Yup.string().required("description is required"),
-    category: Yup.string().required("category is required"),
-    promo: Yup.string(),
+    code: Yup.string().optional(),
+    name: Yup.string().required("Name is required"),
+    price: Yup.mixed<string | number>().required("Price is required"),
+    description: Yup.string().required("Description is required"),
+    category: Yup.string().required("Category is required"),
+    unit: Yup.string().optional(),
+    image: Yup.string().optional(),
+    promo: Yup.string().optional(),
+    acidity: Yup.string().optional(),
+    roast: Yup.string().optional(),
+    processing: Yup.string().optional(),
   });
   const {
     handleSubmit,
@@ -55,8 +56,8 @@ const ProductListPage = () => {
   });
 
   const { data: bestSellerList, refetch } = useQuery({
-    queryKey: ["getProductList", 50, 0],
-    queryFn: () => getProductList(50, 0),
+    queryKey: ["getProductList"],
+    queryFn: () => getProductList(),
   });
   const [showSuccess, setShowSuccess] = useState(false);
 

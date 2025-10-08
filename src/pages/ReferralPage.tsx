@@ -16,7 +16,7 @@ const referralStepList = [
   {
     title: "1. Coffee Points",
     description:
-      "Earn 100 points for every friend you refer! Redeem points for coffee, supplies, or exclusive Brewed in Chaos merchandise.",
+      "Earn 100 points for every friend you refer! Redeem points for coffee, supplies, or exclusive SanSan Korean BBQ merchandise.",
     icon: (
       <img
         src={require("../assets/coffee-stamp.png")}
@@ -155,20 +155,19 @@ const ReferralPage = () => {
                   <Box
                     sx={{
                       flexShrink: 0,
-                      width: { xs: "100%", md: "40%"},
+                      width: { xs: "100%", md: "40%" },
                       display: "flex",
                       justifyContent: "center",
                     }}
-                    >
-
-                  <img
-                    src={humanWithCoffee}
-                    alt="Referral Program"
-                    style={{
-                      width: "100%",
-                      height: "auto",
-                    }}
-                  />
+                  >
+                    <img
+                      src={humanWithCoffee}
+                      alt="Referral Program"
+                      style={{
+                        width: "100%",
+                        height: "auto",
+                      }}
+                    />
                   </Box>
                 </CardContent>
               </Card>

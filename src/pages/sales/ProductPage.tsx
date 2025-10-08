@@ -17,8 +17,8 @@ import { getProductList } from "../../api/admin";
 const ProductPage = () => {
   const navigate = useNavigate();
   const { data: bestSellerList } = useQuery({
-    queryKey: ["getProductList", 50, 0],
-    queryFn: () => getProductList(50, 0),
+    queryKey: ["getProductList"],
+    queryFn: () => getProductList(),
   });
   const [showSuccess, setShowSuccess] = useState(false);
 
