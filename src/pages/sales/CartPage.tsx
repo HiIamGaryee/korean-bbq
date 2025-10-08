@@ -1,683 +1,730 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
-  Typography,
-  Button,
-  Card,
-  CardContent,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TableHead,
-  TableRow,
-  Stack,
   Grid,
-  TextField,
   Paper,
+  Typography,
+  IconButton,
   Divider,
-  useTheme,
-  useMediaQuery,
+  Button,
   ToggleButtonGroup,
   ToggleButton,
+  Avatar,
+  TextField,
+  MenuItem,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Chip,
+  Stack,
+  Link as MuiLink,
+  Collapse,
+  FormHelperText,
+  Card,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
+import RemoveIcon from "@mui/icons-material/Remove";
+import AddIcon from "@mui/icons-material/Add";
+import CreditCardIcon from "@mui/icons-material/CreditCard";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
+import LanguageIcon from "@mui/icons-material/Language";
+import * as yup from "yup";
 import Layout from "../../Layout";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
-import { useAppMutation } from "../../hooks/useAppMutation";
-import { CheckoutParams, postCheckout } from "../../api/admin";
-import AccountBalanceRoundedIcon from "@mui/icons-material/AccountBalanceRounded";
-import CurrencyBitcoinRoundedIcon from "@mui/icons-material/CurrencyBitcoinRounded";
-type CartProduct = {
+
+// ---- Types ----
+type CartItem = {
+  id: string;
   name: string;
-  code: string;
   price: number;
-  quantity: number;
+  qty: number;
+  thumb?: string;
 };
+type OrderType = "Pickup" | "Delivery" | "Dine-in";
+type Shop = { id: string; name: string; isOpen: boolean };
+type Voucher =
+  | {
+      id: "V250_10";
+      label: "RM250 满减 RM10";
+      type: "threshold_minus";
+      min: number;
+      off: number;
+    }
+  | {
+      id: "FREE_DELIVERY_350";
+      label: "满 RM350 免运费";
+      type: "free_delivery";
+      min: number;
+    }
+  | {
+      id: "NEW_USER_10";
+      label: "新用户立减 RM10";
+      type: "new_user_minus";
+      off: number;
+    };
 
-const CartPage = () => {
-  const theme = useTheme();
-  const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
-  const [products, setProducts] = useState<CartProduct[]>([]);
-  const [mobile, setMobile] = useState<string>("");
-  const [address, setAddress] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [promo, setPromo] = useState<string>("");
-  const [serviceType, setServiceType] = useState<"delivery" | "dinein">(
-    "delivery"
-  );
-  const [deliveryDate, setDeliveryDate] = useState<string>("");
-  const [deliveryTime, setDeliveryTime] = useState<string>("");
-  const [couponOpen, setCouponOpen] = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"online" | "qr" | "card">(
-    "online"
-  );
+const initialCart: CartItem[] = [
+  {
+    id: "1",
+    name: "Signature Pork Belly",
+    price: 38,
+    qty: 2,
+    thumb:
+      "https://images.unsplash.com/photo-1601315483607-62a74c5c3a2f?w=400&auto=format&fit=crop",
+  },
+  {
+    id: "2",
+    name: "Bulgogi Beef",
+    price: 42,
+    qty: 1,
+    thumb:
+      "https://images.unsplash.com/photo-1569058242261-8235a82909f8?w=400&auto=format&fit=crop",
+  },
+];
 
-  const { mutate, reset } = useAppMutation(postCheckout, {
-    onSuccess: () => {
-      reset();
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-      setProducts([]); // Clear cart after successful checkout
-      localStorage.removeItem("cart"); // Clear localStorage cart
-    },
+const mockShops: Shop[] = [
+  { id: "s1", name: "SanSan BBQ — KLCC", isOpen: true },
+  { id: "s2", name: "SanSan BBQ — Bangsar", isOpen: false },
+  { id: "s3", name: "SanSan BBQ — Subang", isOpen: true },
+  { id: "s4", name: "SanSan BBQ — PJ", isOpen: false },
+  { id: "s5", name: "SanSan BBQ — Cheras", isOpen: true },
+];
+
+const vouchers: Voucher[] = [
+  {
+    id: "V250_10",
+    label: "RM250 满减 RM10",
+    type: "threshold_minus",
+    min: 250,
+    off: 10,
+  },
+  {
+    id: "FREE_DELIVERY_350",
+    label: "满 RM350 免运费",
+    type: "free_delivery",
+    min: 350,
+  },
+  {
+    id: "NEW_USER_10",
+    label: "新用户立减 RM10",
+    type: "new_user_minus",
+    off: 10,
+  },
+];
+
+const deliverySchema = yup.object({
+  fullname: yup.string().required("Full name is required"),
+  phone: yup
+    .string()
+    .matches(/^\+?6?01[0-46-9]-?[0-9]{7,8}$/, "Enter valid MY phone")
+    .required("Phone is required"),
+  line1: yup.string().required("Address Line 1 is required"),
+  city: yup.string().required("City is required"),
+  state: yup.string().required("State is required"),
+  postcode: yup
+    .string()
+    .matches(/^[0-9]{5}$/, "Postcode must be 5 digits")
+    .required("Postcode is required"),
+});
+
+export default function CartPage() {
+  const [cart, setCart] = useState<CartItem[]>(initialCart);
+  const [orderType, setOrderType] = useState<OrderType>("Pickup");
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [pickupShopId, setPickupShopId] = useState<string>("");
+  const [address, setAddress] = useState({
+    fullname: "",
+    phone: "",
+    line1: "",
+    line2: "",
+    city: "",
+    state: "",
+    postcode: "",
   });
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [selectedVoucherId, setSelectedVoucherId] = useState<
+    Voucher["id"] | ""
+  >("");
+  const [paymentVisible, setPaymentVisible] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<
+    "online_banking" | "qr" | "card" | ""
+  >("");
+  const [bankLinkOpened, setBankLinkOpened] = useState(false);
+
+  const subtotal = useMemo(
+    () => cart.reduce((acc, i) => acc + i.price * i.qty, 0),
+    [cart]
+  );
+  const rawDeliveryFee = useMemo(
+    () => (orderType !== "Delivery" ? 0 : subtotal >= 200 ? 15 : 10),
+    [orderType, subtotal]
+  );
+  const selectedVoucher = useMemo(
+    () => vouchers.find((v) => v.id === selectedVoucherId),
+    [selectedVoucherId]
+  );
+  const deliveryFeeAfterVoucher = useMemo(() => {
+    if (orderType !== "Delivery") return 0;
+    if (
+      selectedVoucher?.type === "free_delivery" &&
+      subtotal >= selectedVoucher.min
+    )
+      return 0;
+    return rawDeliveryFee;
+  }, [orderType, rawDeliveryFee, selectedVoucher, subtotal]);
+  const voucherDiscount = useMemo(() => {
+    if (!selectedVoucher) return 0;
+    if (selectedVoucher.type === "threshold_minus")
+      return subtotal >= selectedVoucher.min ? selectedVoucher.off : 0;
+    if (selectedVoucher.type === "new_user_minus") return selectedVoucher.off;
+    return 0;
+  }, [selectedVoucher, subtotal]);
+  const total = useMemo(
+    () => Math.max(0, subtotal + deliveryFeeAfterVoucher - voucherDiscount),
+    [subtotal, deliveryFeeAfterVoucher, voucherDiscount]
+  );
 
   useEffect(() => {
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    setProducts(cart);
+    setShops(mockShops);
   }, []);
+  useEffect(() => {
+    setErrors({});
+    if (orderType === "Delivery") setPickupShopId("");
+    else
+      setAddress({
+        fullname: "",
+        phone: "",
+        line1: "",
+        line2: "",
+        city: "",
+        state: "",
+        postcode: "",
+      });
+  }, [orderType]);
 
-  const handleQuantityChange = (code: string, newQuantity: number) => {
-    const updatedProducts = products.map((product: CartProduct) => {
-      if (product.code === code) {
-        return { ...product, quantity: newQuantity };
-      }
-      return product;
-    });
-    setProducts(updatedProducts);
-    localStorage.setItem("cart", JSON.stringify(updatedProducts));
-  };
-
-  // Function to remove item from cart
-  const handleRemoveItem = (code: string) => {
-    const updatedProducts = products.filter(
-      (product: CartProduct) => product.code !== code
+  const changeQty = (id: string, delta: number) =>
+    setCart((p) =>
+      p.map((i) =>
+        i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i
+      )
     );
-    setProducts(updatedProducts);
-    localStorage.setItem("cart", JSON.stringify(updatedProducts));
+  const currency = (v: number) =>
+    new Intl.NumberFormat("en-MY", {
+      style: "currency",
+      currency: "MYR",
+      minimumFractionDigits: 2,
+    }).format(v);
+
+  const validateIfNeeded = async () => {
+    if (orderType === "Pickup" && !pickupShopId) {
+      setErrors({ pickupShopId: "Please select a pickup location" });
+      return false;
+    }
+    if (orderType === "Delivery") {
+      try {
+        await deliverySchema.validate(address, { abortEarly: false });
+      } catch (e: any) {
+        const errs: Record<string, string> = {};
+        for (const err of e.inner ?? []) errs[err.path] = err.message;
+        setErrors(errs);
+        return false;
+      }
+    }
+    setErrors({});
+    return true;
   };
 
-  // Calculate the subtotal
-  const subtotal = products.reduce((sum: number, item: CartProduct) => {
-    return sum + item.price * item.quantity;
-  }, 0);
-  const serviceTax = +(subtotal * 0.06).toFixed(2);
-  const totalWithTax = +(subtotal + serviceTax).toFixed(2);
-
-  const requiredOk = () => {
-    const hasProducts = products.length > 0;
-    const deliveryOk =
-      serviceType === "dinein" || (address && deliveryDate && deliveryTime);
-    return hasProducts && deliveryOk;
+  const onProceed = async () => {
+    const ok = await validateIfNeeded();
+    if (!ok) return;
+    setPaymentVisible(true);
+    setTimeout(
+      () =>
+        document
+          .getElementById("payment-section")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      50
+    );
   };
 
-  const [open, setOpen] = useState(false);
-
-  const handleCheckout = () => {
-    setOpen(true); // Open the dialog instead of calling mutate directly
-  };
-
-  const handleConfirmCheckout = () => {
-    const checkoutData: CheckoutParams = {
-      customer: {
-        name: "Customer", // You might want to get this from user context
-        phone: mobile,
-        email: email,
-      },
-      items: products.map(({ code, price, quantity }) => ({
-        id: code,
-        quantity,
-        priceAtOrderTime: typeof price === "string" ? parseFloat(price) : price,
-      })),
-      orderType: "delivery", // or "pickup"
-      specialInstructions: null,
-      paymentMethod: "cash", // or other payment method
-      estimatedTotal: subtotal,
-    };
-    mutate(checkoutData);
-    setOpen(false); // Close the dialog after confirming
-  };
-
-  const handleClose = () => {
-    setOpen(false); // Close the dialog without proceeding
+  const handleOnlineBanking = () => {
+    if (bankLinkOpened) return;
+    setBankLinkOpened(true);
+    const win = window.open(
+      "https://sandbox.bank.example/checkout",
+      "_blank",
+      "noopener,noreferrer"
+    );
+    setTimeout(() => {
+      try {
+        win?.close();
+      } catch {}
+      setBankLinkOpened(false);
+    }, 3000);
   };
 
   return (
     <Layout>
-      <Typography variant="h5" sx={{ px: 2, pt: 2, pb: 1 }}>
-        Shopping Cart
-      </Typography>
-      {/* Always-visible Service Type & Date/Time (sticky style) */}
-      <Paper
-        sx={{
-          mx: { xs: 2, md: 4 },
-          mb: 2,
-          p: 2,
-          borderRadius: 3,
-          position: "relative",
-        }}
-      >
-        <Typography variant="subtitle2" sx={{ mb: 1 }}>
-          Service Type
-        </Typography>
-        <ToggleButtonGroup
-          value={serviceType}
-          exclusive
-          onChange={(_, v) => v && setServiceType(v)}
-          sx={{ mb: 2 }}
-        >
-          <ToggleButton value="delivery">Pick-Up</ToggleButton>
-          <ToggleButton value="dinein">Self Service</ToggleButton>
-        </ToggleButtonGroup>
-        {serviceType === "delivery" && (
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-            <TextField
-              label="Date"
-              type="date"
-              value={deliveryDate}
-              onChange={(e) => setDeliveryDate(e.target.value)}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              label="Time"
-              type="time"
-              value={deliveryTime}
-              onChange={(e) => setDeliveryTime(e.target.value)}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
-          </Stack>
-        )}
-      </Paper>
+      <Box sx={{ p: { xs: 2, md: 3 }, color: "#fff" }}>
+        <Grid container spacing={2}>
+          {/* Cart */}
+          <Grid item xs={12} md={8}>
+            <Paper
+              sx={{
+                p: 2,
 
-      <Grid container spacing={3} sx={{ p: { xs: 2, md: 4 }, pt: 0 }}>
-        {/* Left: Items (mobile renders cards; desktop renders table) */}
-        <Grid item xs={12} md={8}>
-          {!isMdUp ? (
-            <Stack spacing={2}>
-              {/* (Service Type moved to sticky block above) */}
-              {products.length === 0 && (
-                <Paper sx={{ p: 3, textAlign: "center" }}>
-                  <Typography color="text.secondary">
-                    Your cart is empty.
-                  </Typography>
-                </Paper>
+                borderRadius: 2,
+                border: (t) => `1px solid ${t.palette.divider}`,
+              }}
+            >
+              <Typography variant="h4" sx={{ mb: 2 }}>
+                Your Cart
+              </Typography>
+              {cart.length === 0 && (
+                <Typography color="text.secondary">
+                  Your cart is empty.
+                </Typography>
               )}
-              {products.map((product) => (
-                <Paper key={product.code} sx={{ p: 2, borderRadius: 3 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Box
-                      component="img"
-                      src={`https://picsum.photos/seed/${product.code}/96/96`}
-                      alt={product.name}
-                      sx={{
-                        width: 64,
-                        height: 64,
-                        objectFit: "cover",
-                        borderRadius: 2,
-                        boxShadow: 1,
-                      }}
-                    />
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Typography fontWeight={700}>{product.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        ${product.price}
-                      </Typography>
-                    </Box>
-                    <IconButton onClick={() => handleRemoveItem(product.code)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
+              {cart.map((item, idx) => (
+                <Box key={item.id}>
                   <Box
                     sx={{
                       display: "flex",
-                      justifyContent: "space-between",
                       alignItems: "center",
-                      mt: 1,
+                      gap: 2,
+                      py: 1,
                     }}
                   >
-                    <Button variant="text" size="small">
-                      Edit
-                    </Button>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        border: (t) => `1px solid ${t.palette.divider}`,
-                        borderRadius: 999,
-                        px: 1,
-                      }}
-                    >
-                      <IconButton
-                        size="small"
-                        onClick={() =>
-                          handleQuantityChange(
-                            product.code,
-                            Math.max(1, product.quantity - 1)
-                          )
-                        }
-                        disabled={product.quantity <= 1}
-                      >
-                        <RemoveRoundedIcon />
-                      </IconButton>
-                      <Typography sx={{ width: 24, textAlign: "center" }}>
-                        {product.quantity}
+                    <Avatar
+                      variant="rounded"
+                      src={item.thumb}
+                      sx={{ width: 64, height: 64, borderRadius: 1 }}
+                    />
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography variant="h6">{item.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {currency(item.price)}
                       </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <IconButton
-                        size="small"
-                        onClick={() =>
-                          handleQuantityChange(
-                            product.code,
-                            product.quantity + 1
-                          )
-                        }
+                        color="primary"
+                        onClick={() => changeQty(item.id, -1)}
                       >
-                        <AddRoundedIcon />
+                        <RemoveIcon />
+                      </IconButton>
+                      <Typography>{item.qty}</Typography>
+                      <IconButton
+                        color="primary"
+                        onClick={() => changeQty(item.id, 1)}
+                      >
+                        <AddIcon />
                       </IconButton>
                     </Box>
                   </Box>
-                </Paper>
-              ))}
-              <Button
-                variant="outlined"
-                color="primary"
-                sx={{ borderRadius: 2 }}
-              >
-                Add More Items
-              </Button>
-              {/* Promo code */}
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <TextField
-                  fullWidth
-                  placeholder="Promo Code"
-                  value={promo}
-                  onChange={(e) => setPromo(e.target.value)}
-                />
-                <Button variant="contained">Apply</Button>
-              </Box>
-              <Button
-                size="small"
-                variant="text"
-                onClick={() => setCouponOpen(true)}
-                sx={{ alignSelf: "flex-end" }}
-              >
-                View available coupons
-              </Button>
-            </Stack>
-          ) : (
-            <TableContainer component={Card}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Product</TableCell>
-                    <TableCell align="right">Price</TableCell>
-                    <TableCell align="right">Quantity</TableCell>
-                    <TableCell align="right">Total</TableCell>
-                    <TableCell align="right">Action</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {products.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} align="center">
-                        Your cart is empty.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    products.map((product: any) => (
-                      <TableRow key={product.code}>
-                        <TableCell
-                          component="th"
-                          scope="row"
-                          sx={{ display: "flex", gap: 2, alignItems: "center" }}
-                        >
-                          <Box
-                            component="img"
-                            src={`https://picsum.photos/seed/${product.code}/80/80`}
-                            alt={product.name}
-                            sx={{
-                              width: 64,
-                              height: 64,
-                              objectFit: "cover",
-                              borderRadius: 1,
-                            }}
-                          />
-                          {product.name}
-                        </TableCell>
-                        <TableCell align="right">${product.price}</TableCell>
-                        <TableCell align="right">
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "end",
-                            }}
-                          >
-                            <IconButton
-                              onClick={() =>
-                                handleQuantityChange(
-                                  product.code,
-                                  Math.max(1, product.quantity - 1)
-                                )
-                              }
-                              disabled={product.quantity <= 1}
-                            >
-                              <RemoveRoundedIcon />
-                            </IconButton>
-                            <Typography sx={{ mx: 2 }}>
-                              {product.quantity}
-                            </Typography>
-                            <IconButton
-                              onClick={() =>
-                                handleQuantityChange(
-                                  product.code,
-                                  product.quantity + 1
-                                )
-                              }
-                            >
-                              <AddRoundedIcon />
-                            </IconButton>
-                          </Box>
-                        </TableCell>
-                        <TableCell align="right">
-                          ${product.price * product.quantity}
-                        </TableCell>
-                        <TableCell align="right">
-                          <IconButton
-                            onClick={() => handleRemoveItem(product.code)}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                  {idx < cart.length - 1 && (
+                    <Divider sx={{ borderColor: "#2E2E2E" }} />
                   )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Grid>
+                </Box>
+              ))}
+            </Paper>
+          </Grid>
 
-        {/* Right: Summary */}
-        <Grid item xs={12} md={4}>
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Discount Coupon
-              </Typography>
-              <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
-                <TextField
-                  fullWidth
-                  placeholder="Promo Code"
-                  value={promo}
-                  onChange={(e) => setPromo(e.target.value)}
-                />
-                <Button variant="contained">Apply</Button>
-              </Box>
-              <Divider sx={{ mb: 2 }} />
-              <Typography variant="h6" sx={{ mb: 1 }}>
+          {/* Order Summary */}
+          <Grid item xs={12} md={4}>
+            <Paper
+              sx={{
+                p: 2,
+
+                borderRadius: 2,
+                border: (t) => `1px solid ${t.palette.divider}`,
+              }}
+            >
+              <Typography variant="h5" sx={{ mb: 2 }}>
                 Order Summary
               </Typography>
-              <Stack spacing={1} sx={{ mb: 2 }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography color="text.secondary">Sub total</Typography>
-                  <Typography>${subtotal.toFixed(2)}</Typography>
+
+              {/* Service */}
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                Service Type
+              </Typography>
+              <ToggleButtonGroup
+                color="primary"
+                exclusive
+                value={orderType}
+                onChange={(_, v) => v && setOrderType(v)}
+                sx={{ mb: 2, width: "100%" }}
+              >
+                <ToggleButton value="Pickup" sx={{ flex: 1 }}>
+                  Self Pickup
+                </ToggleButton>
+                <ToggleButton value="Delivery" sx={{ flex: 1 }}>
+                  Delivery
+                </ToggleButton>
+                <ToggleButton value="Dine-in" sx={{ flex: 1 }}>
+                  Dine-in
+                </ToggleButton>
+              </ToggleButtonGroup>
+
+              {/* Pickup/Delivery */}
+              <Collapse in={orderType === "Pickup"} unmountOnExit>
+                <TextField
+                  select
+                  fullWidth
+                  label="Pickup Location"
+                  value={pickupShopId}
+                  onChange={(e) => setPickupShopId(e.target.value)}
+                  error={Boolean(errors.pickupShopId)}
+                  helperText={errors.pickupShopId}
+                >
+                  {shops.map((s) => (
+                    <MenuItem key={s.id} value={s.id}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <Box
+                          sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            bgcolor: s.isOpen ? "success.main" : "error.main",
+                          }}
+                        />
+                        {s.name}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <FormHelperText sx={{ mt: 1 }}>
+                  <Box
+                    component="span"
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: "error.main",
+                      display: "inline-block",
+                      mr: 1,
+                    }}
+                  />
+                  Red dot = closed shop.
+                </FormHelperText>
+              </Collapse>
+
+              <Collapse in={orderType === "Delivery"} unmountOnExit>
+                <Box sx={{ display: "grid", gap: 1.25, my: 2 }}>
+                  {[
+                    "fullname",
+                    "phone",
+                    "line1",
+                    "line2",
+                    "city",
+                    "state",
+                    "postcode",
+                  ].map((field, i) => {
+                    const labels = [
+                      "Full Name",
+                      "Phone (Malaysia)",
+                      "Address Line 1",
+                      "Address Line 2",
+                      "City",
+                      "State",
+                      "Postcode",
+                    ];
+                    return (
+                      <TextField
+                        key={field}
+                        label={labels[i]}
+                        value={(address as any)[field]}
+                        onChange={(e) =>
+                          setAddress({ ...address, [field]: e.target.value })
+                        }
+                        error={Boolean(errors[field])}
+                        helperText={errors[field]}
+                      />
+                    );
+                  })}
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography color="text.secondary">
-                    Service tax (6%)
-                  </Typography>
-                  <Typography>${serviceTax.toFixed(2)}</Typography>
-                </Box>
+              </Collapse>
+
+              {/* Voucher (always visible) */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Voucher
+                </Typography>
+                <Stack spacing={1}>
+                  {vouchers.map((v) => {
+                    const eligible =
+                      (v.type === "threshold_minus" && subtotal >= v.min) ||
+                      (v.type === "free_delivery" && subtotal >= v.min) ||
+                      v.type === "new_user_minus";
+                    const selected = selectedVoucherId === v.id;
+                    return (
+                      <Paper
+                        key={v.id}
+                        variant="outlined"
+                        sx={{
+                          p: 1,
+                          borderColor: selected ? "primary.main" : "divider",
+                          opacity: eligible ? 1 : 0.4,
+                          cursor: eligible ? "pointer" : "not-allowed",
+                          bgcolor: selected
+                            ? "rgba(25,118,210,0.1)"
+                            : "transparent",
+                          transition: "0.25s",
+                          "&:hover": {
+                            borderColor: eligible ? "primary.main" : "divider",
+                          },
+                        }}
+                        onClick={() => eligible && setSelectedVoucherId(v.id)}
+                      >
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="center"
+                        >
+                          <Typography>{v.label}</Typography>
+                          {selected && (
+                            <Chip
+                              size="small"
+                              color="primary"
+                              label="Selected"
+                            />
+                          )}
+                        </Stack>
+                        {v.type !== "new_user_minus" && (
+                          <FormHelperText>
+                            Condition: ≥ {currency((v as any).min)}
+                          </FormHelperText>
+                        )}
+                      </Paper>
+                    );
+                  })}
+                </Stack>
+                {selectedVoucherId && (
+                  <Button
+                    size="small"
+                    color="inherit"
+                    sx={{ mt: 1 }}
+                    onClick={() => setSelectedVoucherId("")}
+                  >
+                    Remove Voucher
+                  </Button>
+                )}
+                <FormHelperText sx={{ mt: 0.5 }}>
+                  Tap a voucher to apply. Only one can be active.
+                </FormHelperText>
+              </Box>
+
+              {/* Totals */}
+              <Box
+                sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
+              >
+                <Typography color="text.secondary">Subtotal</Typography>
+                <Typography>{currency(subtotal)}</Typography>
+              </Box>
+              {orderType === "Delivery" && (
                 <Box
                   sx={{
                     display: "flex",
                     justifyContent: "space-between",
-                    fontWeight: 700,
+                    mb: 1,
                   }}
                 >
-                  <Typography>Total</Typography>
-                  <Typography fontWeight={800}>
-                    ${totalWithTax.toFixed(2)}
+                  <Typography color="text.secondary">Delivery Fee</Typography>
+                  <Typography>
+                    {selectedVoucher?.type === "free_delivery" &&
+                    subtotal >= (selectedVoucher as any).min ? (
+                      <Chip size="small" color="success" label="FREE" />
+                    ) : (
+                      currency(deliveryFeeAfterVoucher)
+                    )}
                   </Typography>
                 </Box>
-              </Stack>
-              {/* Personal Details (web) */}
-              {isMdUp && (
-                <Stack spacing={2} sx={{ mb: 2 }}>
-                  {serviceType === "delivery" && (
-                    <TextField
-                      label="Delivery Address"
-                      fullWidth
-                      required
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                    />
-                  )}
-                  <TextField
-                    label="Mobile No"
-                    fullWidth
-                    required
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
-                  />
-                  <TextField
-                    label="Email"
-                    fullWidth
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </Stack>
               )}
-              {!showPayment ? (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                  disabled={!requiredOk()}
-                  onClick={() => setShowPayment(true)}
-                  sx={{ py: 1.25, borderRadius: 2 }}
+              {voucherDiscount > 0 && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    mb: 1,
+                  }}
                 >
-                  Continue
-                </Button>
-              ) : (
-                <Stack spacing={2}>
-                  <Typography variant="h6">Choose Payment</Typography>
-                  <ToggleButtonGroup
+                  <Typography color="text.secondary">
+                    Voucher Discount
+                  </Typography>
+                  <Typography color="success.main">
+                    − {currency(voucherDiscount)}
+                  </Typography>
+                </Box>
+              )}
+              <Divider sx={{ my: 1, borderColor: "#2E2E2E" }} />
+              <Box
+                sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}
+              >
+                <Typography>Total</Typography>
+                <Typography fontWeight={700}>{currency(total)}</Typography>
+              </Box>
+
+              <Button
+                variant="contained"
+                fullWidth
+                sx={{ borderRadius: 50 }}
+                onClick={onProceed}
+              >
+                Proceed to Payment
+              </Button>
+
+              {/* Payment Section */}
+              <Collapse in={paymentVisible} unmountOnExit>
+                <Box id="payment-section" sx={{ mt: 3 }}>
+                  <Typography variant="h5" sx={{ mb: 2 }}>
+                    Payment Method
+                  </Typography>
+                  <RadioGroup
                     value={paymentMethod}
-                    exclusive
-                    onChange={(_, v) => v && setPaymentMethod(v)}
+                    onChange={(_, v) => setPaymentMethod(v as any)}
+                    sx={{ gap: 1, mb: 2 }}
                   >
-                    <ToggleButton value="online">Online Banking</ToggleButton>
-                    <ToggleButton value="qr">QR</ToggleButton>
-                    <ToggleButton value="card">Bank Card</ToggleButton>
-                  </ToggleButtonGroup>
-                  {paymentMethod === "online" && (
-                    <Box>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 1 }}
-                      >
-                        You will be redirected to your bank's secure page.
+                    <FormControlLabel
+                      value="online_banking"
+                      control={<Radio />}
+                      label={
+                        <Stack direction="row" spacing={1}>
+                          <LanguageIcon />{" "}
+                          <Typography>Online Banking</Typography>
+                        </Stack>
+                      }
+                    />
+                    <FormControlLabel
+                      value="qr"
+                      control={<Radio />}
+                      label={
+                        <Stack direction="row" spacing={1}>
+                          <QrCode2Icon /> <Typography>QR Pay</Typography>
+                        </Stack>
+                      }
+                    />
+                    <FormControlLabel
+                      value="card"
+                      control={<Radio />}
+                      label={
+                        <Stack direction="row" spacing={1}>
+                          <CreditCardIcon /> <Typography>Bank Card</Typography>
+                        </Stack>
+                      }
+                    />
+                  </RadioGroup>
+
+                  <Collapse
+                    in={paymentMethod === "online_banking"}
+                    unmountOnExit
+                  >
+                    <Card variant="outlined" sx={{ p: 2, mb: 2 }}>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        Redirecting to bank page, auto-close in 3s.
                       </Typography>
                       <Button
                         variant="contained"
-                        onClick={() => {
-                          const w = window.open(
-                            "https://example.com/bank",
-                            "_blank"
-                          );
-                          setTimeout(() => {
-                            try {
-                              w?.close();
-                            } catch {}
-                            handleCheckout();
-                          }, 3000);
-                        }}
+                        onClick={handleOnlineBanking}
+                        disabled={bankLinkOpened}
                       >
-                        Pay via Bank
+                        {bankLinkOpened
+                          ? "Opening Bank…"
+                          : "Pay via Online Banking"}
                       </Button>
-                    </Box>
-                  )}
-                  {paymentMethod === "qr" && (
-                    <Box sx={{ textAlign: "center" }}>
+                    </Card>
+                  </Collapse>
+
+                  <Collapse in={paymentMethod === "qr"} unmountOnExit>
+                    <Card
+                      variant="outlined"
+                      sx={{ p: 2, mb: 2, textAlign: "center" }}
+                    >
                       <Typography variant="body2" sx={{ mb: 1 }}>
-                        Scan QR to Pay
+                        Scan to pay
                       </Typography>
                       <Box
                         sx={{
-                          width: 180,
-                          height: 180,
+                          width: 200,
+                          height: 200,
                           mx: "auto",
-                          bgcolor: theme.palette.action.hover,
-                          borderRadius: 2,
+                          bgcolor: "#fff",
+                          borderRadius: 1,
+                          backgroundImage:
+                            "radial-gradient(#000 1px, transparent 1px), radial-gradient(#000 1px, transparent 1px)",
+                          backgroundSize: "12px 12px",
+                          backgroundPosition: "0 0, 6px 6px",
                         }}
                       />
-                      <Button
-                        variant="contained"
-                        sx={{ mt: 2 }}
-                        onClick={handleCheckout}
-                      >
-                        I have paid
-                      </Button>
-                    </Box>
-                  )}
-                  {paymentMethod === "card" && (
-                    <Stack spacing={1}>
-                      <TextField
-                        label="Card Number"
-                        placeholder="4111 1111 1111 1111"
-                      />
-                      <Stack direction="row" spacing={1}>
-                        <TextField
-                          label="Expiry"
-                          placeholder="MM/YY"
-                          fullWidth
-                        />
-                        <TextField label="CVV" placeholder="123" fullWidth />
-                      </Stack>
-                      <Button variant="contained" onClick={handleCheckout}>
-                        Pay ${totalWithTax.toFixed(2)}
-                      </Button>
-                    </Stack>
-                  )}
-                </Stack>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-      {showSuccess && (
-        <Paper
-          elevation={4}
-          sx={{
-            position: "absolute",
-            bottom: 120,
-            right: 16,
-            padding: 2,
-            borderRadius: "8px",
-          }}
-        >
-          🛍️ Successfully add to Cart!
-        </Paper>
-      )}
-      {/* Coupons dialog */}
-      <Dialog
-        open={couponOpen}
-        onClose={() => setCouponOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Coupons</DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-            <TextField
-              fullWidth
-              placeholder="Enter Coupon Code"
-              value={promo}
-              onChange={(e) => setPromo(e.target.value)}
-            />
-            <Button variant="contained" onClick={() => setCouponOpen(false)}>
-              Apply
-            </Button>
-          </Box>
-          <Stack spacing={2}>
-            {[
-              {
-                code: "DIGISMART",
-                title:
-                  "Flat 10% OFF on Standard Chartered Digismart Credit Cards",
-                note: "No Minimum Order Value",
-              },
-              {
-                code: "HSBC10",
-                title: "Flat 10% OFF upto $10 on HSBC Cashback Credit Card",
-                note: "Total Value of items Must be $3 or More",
-              },
-              {
-                code: "PAYMENT50",
-                title: "Get Upto 50 OFF on Your First Payment",
-                note: "Total Value of items Must be $10 or More",
-              },
-            ].map((c) => (
-              <Paper key={c.code} sx={{ p: 2, borderRadius: 2 }}>
-                <Typography fontWeight={700} sx={{ mb: 0.5 }}>
-                  {c.title}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {c.note}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mt: 1,
-                  }}
-                >
-                  <Button size="small" variant="outlined">
-                    {c.code}
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    onClick={() => {
-                      setPromo(c.code);
-                      setCouponOpen(false);
-                    }}
-                  >
-                    Apply
-                  </Button>
-                </Box>
-              </Paper>
-            ))}
-          </Stack>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Confirm Payment Method</DialogTitle>
+                    </Card>
+                  </Collapse>
 
-        <DialogActions sx={{ display: "flex", gap: 2, p: 2 }}>
-          <Button
-            onClick={handleConfirmCheckout}
-            color="primary"
-            startIcon={<CurrencyBitcoinRoundedIcon />}
-          >
-            Cryptocurrency
-          </Button>
-          <Button
-            onClick={handleConfirmCheckout}
-            color="primary"
-            startIcon={<AccountBalanceRoundedIcon />}
-          >
-            Bank Transfer
-          </Button>
-        </DialogActions>
-      </Dialog>
+                  <Collapse in={paymentMethod === "card"} unmountOnExit>
+                    <Card variant="outlined" sx={{ p: 2, mb: 2 }}>
+                      <Stack spacing={1.25}>
+                        <TextField
+                          label="Cardholder Name"
+                          placeholder="As on card"
+                        />
+                        <TextField
+                          label="Card Number"
+                          placeholder="XXXX XXXX XXXX XXXX"
+                        />
+                        <Stack direction="row" spacing={1}>
+                          <TextField
+                            label="Expiry (MM/YY)"
+                            sx={{ flex: 1 }}
+                            placeholder="MM/YY"
+                          />
+                          <TextField
+                            label="CVV"
+                            sx={{ flex: 1 }}
+                            placeholder="***"
+                          />
+                        </Stack>
+                        <TextField
+                          select
+                          label="Saved Cards"
+                          helperText="No saved cards yet"
+                        >
+                          <MenuItem value="" disabled>
+                            — Empty —
+                          </MenuItem>
+                        </TextField>
+                      </Stack>
+                    </Card>
+                  </Collapse>
+
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mt: 1, mb: 2 }}
+                  >
+                    <Typography>Total</Typography>
+                    <Typography fontWeight={800}>{currency(total)}</Typography>
+                  </Stack>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    sx={{ borderRadius: 50 }}
+                  >
+                    Confirm & Pay
+                  </Button>
+                  <FormHelperText sx={{ mt: 1 }}>
+                    Need help?{" "}
+                    <MuiLink
+                      href="mailto:support@sansan-bbq.com"
+                      underline="hover"
+                    >
+                      support@sansan-bbq.com
+                    </MuiLink>
+                  </FormHelperText>
+                </Box>
+              </Collapse>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
     </Layout>
   );
-};
-
-export default CartPage;
+}
